@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+*.egg-info/
+
+# Node
+node_modules/
+frontend/dist/
+frontend/coverage/
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+.vercel/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Source assignment document (not redistributed)
+*.docx
