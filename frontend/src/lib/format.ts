@@ -27,14 +27,16 @@ export const fmtDay = (isoDate: string) => {
 };
 
 export const COLORS = {
-  actual: "#10B981",
-  forecast: "#38BDF8",
-  band: "#38BDF8",
-  risk: "#F59E0B",
-  shortfall: "#F43F5E",
-  thermal: "#F59E0B",
-  muted: "#64748B",
-  violet: "#A78BFA",
+  actual: "#0F9D8A",
+  forecast: "#4D63D9",
+  band: "#4D63D9",
+  risk: "#E08A00",
+  shortfall: "#D6453D",
+  thermal: "#E08A00",
+  long: "#2F7FC1",
+  muted: "#7B8BA1",
+  ink: "#13233A",
+  violet: "#8B5CF6",
 };
 
 export const POSTURE_LABEL: Record<string, string> = {

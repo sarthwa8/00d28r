@@ -18,14 +18,14 @@ export function ForecastEvolutionModal({ targetTime, cutoffHour, onClose }: Prop
 
   if (!targetTime) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/70 p-4 pt-16" onClick={onClose} role="dialog" aria-modal="true" aria-label="Forecast revision history">
-      <div className="card w-full max-w-4xl p-5" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-ink/40 backdrop-blur-sm p-4 pt-16" onClick={onClose} role="dialog" aria-modal="true" aria-label="Forecast revision history">
+      <div className="panel w-full max-w-4xl p-6" onClick={(e) => e.stopPropagation()}>
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-base font-semibold text-white">Forecast Evolution — {fmtTime(targetTime)} UTC</h2>
-            <p className="card-sub">Every WINDFOR revision for this settlement period over the 48h before delivery, vs. FUELHH actual outturn.</p>
+            <h2 className="font-semi-expanded text-[18px] font-semibold text-ink">How the forecast for {fmtTime(targetTime)} UTC evolved</h2>
+            <p className="panel-note">Every WINDFOR run for this half-hour in the 48 hours before delivery, against the FUELHH actual.</p>
           </div>
-          <button onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-800 hover:text-white" aria-label="Close">
+          <button onClick={onClose} className="rounded-md p-1 text-ink-2 hover:bg-paper hover:text-ink" aria-label="Close">
             <X className="h-5 w-5" />
           </button>
         </div>

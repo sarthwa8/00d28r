@@ -3,8 +3,8 @@
 A full-stack web app for a UK utility's day-ahead power trading desk. It answers two questions for every
 purchase decision made in **January 2026**:
 
-1. **What was the latest national wind forecast available when the decision had to be made?** (Day-Ahead Procurement Desk)
-2. **How accurate are those forecasts, quantitatively, and how much extra thermal power should we buy to cover the error?** (Forecast Accuracy & Error Lab)
+1. **What was the latest national wind forecast available when the decision had to be made?** (Procurement desk)
+2. **How accurate are those forecasts, quantitatively, and how much extra thermal power should we buy to cover the error?** (Error lab)
 
 All numbers come from real **Elexon BMRS** data: `FUELHH` (actual generation, `fuelType = WIND`) and `WINDFOR` (wind forecasts with `publishTime`).
 No other data sources are used.
@@ -50,7 +50,9 @@ potential. This is a hypothesis to validate with the client, not a conclusion of
 
 ## Features
 
-**Tab 1 · Day-Ahead Procurement Desk**
+The app has two *Trade* workspaces for daily use and two *Present* workspaces that follow the two halves of the video.
+
+**Procurement desk (Trade)**
 - Delivery window presets (Jan-2026 decisions, calendar January, weeks 1–4, any single day 1 Jan – 1 Feb).
 - Decision rule: **D-1 auction cutoff** (latest forecast with `publishTime ≤ (D−1) + cutoff hour`) or **rolling lead time** (`t−48h ≤ publishTime ≤ t − H`).
 - Portfolio demand (MW) and hedging posture: Raw / De-bias (median) / P90 / P95.
@@ -59,14 +61,19 @@ potential. This is a hypothesis to validate with the client, not a conclusion of
   actual, error, thermal buy) with **CSV export**.
 - Click any chart point or table row to open the **forecast revision history** for that half-hour.
 
-**Tab 2 · Forecast Accuracy & Error Lab**
+**Error lab (Trade)**
 - KPI cards: MAE, RMSE, bias, MAPE, P90/P95 shortfall buffers, worst shortfall, average lead time.
 - Error vs lead-time curve (7 buckets, 0–48h), diurnal error profile, signed-error histogram with P5–P95 quantile table, skew and kurtosis.
 - Forecast evolution inspector (any settlement period, jump to worst shortfall).
 - Risk-buffer calibration table (q10/q50/q90/q95 per lead-time bucket).
 
-**Tab 3 · Executive Pitch & Architecture**: live-computed findings, the posture trade-off, recommendations,
-an architecture and data-lineage overview, formulas and engineering practices.
+**Client briefing (Present)**: the January story for the trading desk. A full-width chart of the forecast against actual wind with
+every over-forecast shaded, headline figures, the short-vs-long trade-off for each hedging posture, where the risk concentrates, and
+recommendations. Every number is computed live from the API.
+
+**Tech review (Present)**: for the technical lead. A clickable six-step data pipeline (file paths and real row counts), an interactive
+no-look-ahead timeline (drag the D-1 cutoff and watch which forecast run the engine selects), a live API explorer with status, latency
+and payload size, metric definitions, and test-suite evidence.
 
 ---
 
@@ -101,7 +108,7 @@ an architecture and data-lineage overview, formulas and engineering practices.
         ├── services/apiClient.ts   # Typed fetch client
         ├── lib/format.ts           # Number/time formatting, colour palette
         ├── components/             # Header, ControlBar, KpiStrip, ProcurementDeskTab, AccuracyLabTab,
-        │                           # ExecutivePitchTab, ForecastEvolution(+Modal)
+        │                           # ClientBriefingTab, TechReviewTab, ForecastEvolution(+Modal), ui/ChartTooltip
         └── __tests__/              # Vitest + Testing Library
 ```
 

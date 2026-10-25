@@ -4,7 +4,8 @@ import { Header, type TabId } from "./components/Header";
 import { ControlBar } from "./components/ControlBar";
 import { ProcurementDeskTab } from "./components/ProcurementDeskTab";
 import { AccuracyLabTab } from "./components/AccuracyLabTab";
-import { ExecutivePitchTab } from "./components/ExecutivePitchTab";
+import { ClientBriefingTab } from "./components/ClientBriefingTab";
+import { TechReviewTab } from "./components/TechReviewTab";
 import { ForecastEvolutionModal } from "./components/ForecastEvolutionModal";
 import { api } from "./services/apiClient";
 import type { DashboardParams, DashboardResponse, HealthResponse } from "./types/api";
@@ -65,24 +66,32 @@ export default function App() {
   return (
     <div className="min-h-screen">
       <Header tab={tab} onTab={setTab} health={health} healthError={healthError} />
-      <main className="mx-auto max-w-[1600px] space-y-4 px-4 py-4 sm:px-6">
-        {tab !== "pitch" && <ControlBar params={params} onChange={onChange} loading={loading} />}
-        {error && tab !== "pitch" && (
-          <div className="flex items-center gap-2 rounded-lg border border-rose-800 bg-rose-500/10 px-4 py-2 text-sm text-rose-200" role="alert">
-            <AlertTriangle className="h-4 w-4" /> {error}
+      <main className="mx-auto max-w-[1560px] px-4 py-6 sm:px-6">
+        {tab === "briefing" ? (
+          <ClientBriefingTab baseline={baseline} />
+        ) : tab === "tech" ? (
+          <TechReviewTab baseline={baseline} health={health} />
+        ) : (
+          <div className="grid items-start gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
+            <ControlBar params={params} onChange={onChange} loading={loading} />
+            <div className="min-w-0 space-y-4">
+              {error && (
+                <div className="flex items-center gap-2 rounded-xl bg-short/10 px-4 py-3 text-sm text-short ring-1 ring-short/30" role="alert">
+                  <AlertTriangle className="h-4 w-4" /> {error}
+                </div>
+              )}
+              {!data ? (
+                <p className="animate-pulse py-24 text-center text-sm text-ink-3">Loading January 2026 analytics…</p>
+              ) : tab === "desk" ? (
+                <ProcurementDeskTab data={data} onInspect={setInspect} />
+              ) : (
+                <AccuracyLabTab data={data} cutoffHour={params.cutoff_hour_utc} />
+              )}
+            </div>
           </div>
         )}
-        {tab === "pitch" ? (
-          <ExecutivePitchTab baseline={baseline} health={health} />
-        ) : !data ? (
-          <p className="animate-pulse py-20 text-center text-sm text-slate-400">Loading January 2026 analytics…</p>
-        ) : tab === "desk" ? (
-          <ProcurementDeskTab data={data} onInspect={setInspect} />
-        ) : (
-          <AccuracyLabTab data={data} cutoffHour={params.cutoff_hour_utc} />
-        )}
-        <footer className="pb-6 pt-2 text-center text-[11px] text-slate-600">
-          Data: Elexon BMRS FUELHH (WIND) &amp; WINDFOR · All times UTC (= GMT, UK local time in January) · Built with React, FastAPI &amp; pandas
+        <footer className="pb-4 pt-10 text-center text-[12px] text-ink-3">
+          Data from Elexon BMRS (FUELHH wind outturn and WINDFOR forecasts). Times are UTC, which is UK local time in January.
         </footer>
       </main>
       <ForecastEvolutionModal targetTime={inspect} cutoffHour={params.cutoff_hour_utc} onClose={closeInspect} />

@@ -89,15 +89,11 @@ afterEach(() => {
 });
 
 describe("WindSight GB app", () => {
-  it("renders header, status badge and the three workspaces", async () => {
+  it("renders header, status badge and the four workspaces", async () => {
     render(<App />);
     expect(screen.getByRole("heading", { name: /WindSight/ })).toBeInTheDocument();
-    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual([
-      "Day-Ahead Procurement Desk",
-      "Forecast Accuracy & Error Lab",
-      "Executive Pitch & Architecture",
-    ]);
-    await waitFor(() => expect(screen.getByTestId("status-badge")).toHaveTextContent("Elexon BMRS Verified"));
+    expect(screen.getAllByRole("tab").map((t) => t.textContent)).toEqual(["Procurement desk", "Error lab", "Client briefing", "Tech review"]);
+    await waitFor(() => expect(screen.getByTestId("status-badge")).toHaveTextContent("Elexon BMRS verified, 280 forecast runs"));
   });
 
   it("renders KPI values from the dashboard API", async () => {
@@ -106,7 +102,7 @@ describe("WindSight GB app", () => {
     expect(strip).toHaveTextContent("2,108");
     expect(strip).toHaveTextContent("+1,839");
     expect(strip).toHaveTextContent("4,334");
-    expect(screen.getByText(/Settlement-period procurement schedule/)).toBeInTheDocument();
+    expect(screen.getByText(/Bid schedule for/)).toBeInTheDocument();
     expect(screen.getAllByRole("row").length).toBeGreaterThan(48);
   });
 
@@ -125,14 +121,18 @@ describe("WindSight GB app", () => {
     expect(await screen.findByText(/no — published after cutoff/)).toBeInTheDocument();
   });
 
-  it("switches to the error lab and executive tabs", async () => {
+  it("switches to the error lab and both presentation tabs", async () => {
     render(<App />);
     await screen.findByTestId("kpi-strip");
-    fireEvent.click(screen.getByRole("tab", { name: /Error Lab/ }));
-    expect(await screen.findByText(/Error vs forecast lead time/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Error lab" }));
+    expect(await screen.findByText(/The further ahead, the bigger the miss/)).toBeInTheDocument();
     expect(screen.getByLabelText("Error quantiles")).toHaveTextContent("+4,334");
-    fireEvent.click(screen.getByRole("tab", { name: /Executive/ }));
-    expect(await screen.findByText(/Forecasts are systematically optimistic/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Client briefing" }));
+    expect(await screen.findByText(/promised an average of 1,839 MW more than the turbines delivered/)).toBeInTheDocument();
+    expect(screen.getByLabelText("Posture trade-off")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("tab", { name: "Tech review" }));
+    expect(await screen.findByText(/No look-ahead/)).toBeInTheDocument();
+    expect(await screen.findByText(/2 \/ 2|1 \/ 2/)).toBeInTheDocument();
   });
 });
 

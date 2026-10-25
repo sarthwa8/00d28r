@@ -1,13 +1,39 @@
-import { Activity, BarChart3, Briefcase, Wind } from "lucide-react";
 import type { HealthResponse } from "../types/api";
 
-export type TabId = "desk" | "lab" | "pitch";
+export type TabId = "desk" | "lab" | "briefing" | "tech";
 
-const TABS: { id: TabId; label: string; icon: typeof Wind }[] = [
-  { id: "desk", label: "Day-Ahead Procurement Desk", icon: Briefcase },
-  { id: "lab", label: "Forecast Accuracy & Error Lab", icon: BarChart3 },
-  { id: "pitch", label: "Executive Pitch & Architecture", icon: Activity },
+const GROUPS: { group: string; tabs: { id: TabId; label: string }[] }[] = [
+  {
+    group: "Trade",
+    tabs: [
+      { id: "desk", label: "Procurement desk" },
+      { id: "lab", label: "Error lab" },
+    ],
+  },
+  {
+    group: "Present",
+    tabs: [
+      { id: "briefing", label: "Client briefing" },
+      { id: "tech", label: "Tech review" },
+    ],
+  },
 ];
+
+/** Meteorological wind barb: the staff points into the wind, each full feather is 10 knots. */
+function WindBarb() {
+  return (
+    <svg viewBox="0 0 40 40" className="h-9 w-9" aria-hidden>
+      <rect width="40" height="40" rx="10" fill="#13233A" />
+      <g stroke="#FFFFFF" strokeWidth="2.4" strokeLinecap="round" fill="none">
+        <path d="M11 30 L28 11" />
+        <path d="M28 11 L34 17" />
+        <path d="M24.5 15 L30.5 21" />
+        <path d="M21 19 L24.5 22.5" />
+      </g>
+      <circle cx="11" cy="30" r="3" fill="#0F9D8A" />
+    </svg>
+  );
+}
 
 interface Props {
   tab: TabId;
@@ -19,50 +45,52 @@ interface Props {
 export function Header({ tab, onTab, health, healthError }: Props) {
   const ok = health?.status === "ok";
   return (
-    <header className="sticky top-0 z-30 border-b border-slate-800 bg-canvas/95 backdrop-blur">
-      <div className="mx-auto flex max-w-[1600px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+    <header className="sticky top-0 z-30 border-b border-rule bg-paper/90 backdrop-blur">
+      <div className="mx-auto flex max-w-[1560px] flex-wrap items-center gap-x-8 gap-y-3 px-4 py-3 sm:px-6">
         <div className="flex items-center gap-3">
-          <div className="grid h-9 w-9 place-items-center rounded-lg bg-emerald-500/15 ring-1 ring-emerald-500/40">
-            <Wind className="h-5 w-5 text-emerald-400" aria-hidden />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-white">
-              WindSight <span className="text-emerald-400">GB</span>
-            </h1>
-            <p className="text-xs text-slate-400">UK Day-Ahead Wind Forecast &amp; Procurement Intelligence</p>
+          <WindBarb />
+          <div className="leading-tight">
+            <h1 className="font-expanded text-[19px] font-bold text-ink">WindSight GB</h1>
+            <p className="text-[12px] text-ink-2">Day-ahead wind risk for the GB trading desk</p>
           </div>
         </div>
+
+        <nav className="order-3 flex w-full gap-6 overflow-x-auto lg:order-2 lg:w-auto" aria-label="Workspaces">
+          {GROUPS.map(({ group, tabs }) => (
+            <div key={group} className="flex items-center gap-1.5">
+              <span className="pr-1 text-[12px] text-ink-3">{group}</span>
+              <div className="flex gap-1" role="tablist" aria-label={group}>
+                {tabs.map((t) => (
+                  <button
+                    key={t.id}
+                    role="tab"
+                    aria-selected={tab === t.id}
+                    onClick={() => onTab(t.id)}
+                    className={`shrink-0 rounded-full px-3.5 py-1.5 text-[13px] font-medium transition-colors ${
+                      tab === t.id ? "bg-ink text-white" : "text-ink-2 hover:bg-white hover:text-ink"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </nav>
+
         <div
-          className={`flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-medium ${
-            ok ? "border-emerald-700/60 bg-emerald-500/10 text-emerald-300" : "border-rose-700/60 bg-rose-500/10 text-rose-300"
-          }`}
+          className="order-2 ml-auto flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[12px] text-ink-2 ring-1 ring-rule lg:order-3"
           data-testid="status-badge"
-          title={health ? `Snapshot fetched ${health.fetched_at_utc} · ${health.actuals_count} actuals · ${health.forecasts_raw_count} forecasts` : undefined}
+          title={health ? `Snapshot fetched ${health.fetched_at_utc}` : undefined}
         >
-          <span className={`h-2 w-2 rounded-full ${ok ? "bg-emerald-400 animate-pulse" : "bg-rose-400"}`} />
+          <span className={`h-2 w-2 rounded-full ${ok ? "bg-wind" : healthError ? "bg-short" : "bg-ink-3 animate-pulse"}`} />
           {health
-            ? `Elexon BMRS Verified • Jan 2026 Decision Window • ${health.publish_runs} forecast runs`
+            ? `Elexon BMRS verified, ${health.publish_runs} forecast runs`
             : healthError
               ? `API unavailable: ${healthError}`
-              : "Connecting to analytics engine…"}
+              : "Connecting to the analytics engine"}
         </div>
       </div>
-      <nav className="mx-auto flex max-w-[1600px] gap-1 overflow-x-auto px-4 sm:px-6" role="tablist">
-        {TABS.map(({ id, label, icon: Icon }) => (
-          <button
-            key={id}
-            role="tab"
-            aria-selected={tab === id}
-            onClick={() => onTab(id)}
-            className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm font-medium transition-colors ${
-              tab === id ? "border-sky-400 text-white" : "border-transparent text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <Icon className="h-4 w-4" aria-hidden />
-            {label}
-          </button>
-        ))}
-      </nav>
     </header>
   );
 }
