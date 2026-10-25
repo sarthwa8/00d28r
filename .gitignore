@@ -23,3 +23,6 @@ frontend/coverage/
 
 # Source assignment document (not redistributed)
 *.docx
+
+# Local tooling
+.claude/

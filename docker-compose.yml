@@ -1,0 +1,11 @@
+services:
+  windsight-portal:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: windsight-portal:latest
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    restart: unless-stopped
