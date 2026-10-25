@@ -74,7 +74,6 @@ export function ProcurementDeskTab({ data, onInspect }: Props) {
   );
   const multiDay = days.length > 1;
   const tickFmt = (v: string) => (multiDay ? fmtTime(v).split(" ").slice(0, 2).join(" ") : fmtTime(v).split(" ")[2]);
-  const thermalVsActual = (meta.total_recommended_thermal_mwh ?? 0) - (meta.total_actual_thermal_needed_mwh ?? 0);
   const clickHandler = (s: { activePayload?: { payload: TimeseriesPoint }[] } | null) => {
     const p = s?.activePayload?.[0]?.payload;
     if (p) onInspect(p.startTime);
@@ -94,9 +93,9 @@ export function ProcurementDeskTab({ data, onInspect }: Props) {
         <Summary
           label="Residual short exposure"
           value={fmtGWh(meta.total_residual_shortfall_mwh)}
-          sub={`buy vs perfect hindsight: ${thermalVsActual >= 0 ? "+" : ""}${fmtGWh(thermalVsActual)}`}
+          sub={`over-procured (long): ${fmtGWh(meta.total_over_procured_mwh)}`}
           tone="text-rose-300"
-          hint="Energy in periods where actual wind fell below the relied-upon wind, i.e. volume left to the imbalance market"
+          hint="Short = energy in periods where actual wind fell below the relied-upon wind, i.e. volume left to the imbalance market. Long = thermal bought beyond what realised wind required."
         />
       </div>
 
@@ -132,7 +131,7 @@ export function ProcurementDeskTab({ data, onInspect }: Props) {
               <Line dataKey="forecast_mw" name="Forecast (WINDFOR)" stroke={COLORS.forecast} dot={false} strokeWidth={1.6} isAnimationActive={false} />
               <Line dataKey="actual_mw" name="Actual (FUELHH)" stroke={COLORS.actual} dot={false} strokeWidth={1.6} isAnimationActive={false} />
               {meta.risk_posture !== "raw" && (
-                <Line dataKey="risk_adjusted_wind_mw" name={`Relied-upon wind (${meta.risk_posture.toUpperCase()})`} stroke={COLORS.risk} strokeDasharray="4 3" dot={false} strokeWidth={1.3} isAnimationActive={false} />
+                <Line dataKey="risk_adjusted_wind_mw" name={`Relied-upon wind (${POSTURE_LABEL[meta.risk_posture]})`} stroke={COLORS.risk} strokeDasharray="4 3" dot={false} strokeWidth={1.3} isAnimationActive={false} />
               )}
             </ComposedChart>
           </ResponsiveContainer>

@@ -40,6 +40,7 @@ class DashboardMeta(BaseModel):
     total_recommended_thermal_mwh: Num
     total_actual_thermal_needed_mwh: Num
     total_residual_shortfall_mwh: Num
+    total_over_procured_mwh: Num
     all_pairs_sample_count: int
     data_source: str
     data_fetched_at_utc: Optional[str]
@@ -144,6 +145,7 @@ class DailySummary(BaseModel):
 class CalibrationBucket(BaseModel):
     bucket_label: str
     q10: Num
+    q50: Num
     q90: Num
     q95: Num
     n: int

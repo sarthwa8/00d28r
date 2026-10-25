@@ -137,10 +137,14 @@ class TestMetrics:
 
 class TestProcurement:
     def test_risk_adjusted_wind_and_thermal(self):
-        calib = {"18-24h": {"q10": -100.0, "q90": 1000.0, "q95": 1500.0}, "0-4h": {"q10": -50.0, "q90": -20.0, "q95": -10.0}}
+        calib = {
+            "18-24h": {"q10": -100.0, "q50": 400.0, "q90": 1000.0, "q95": 1500.0},
+            "0-4h": {"q10": -50.0, "q50": -30.0, "q90": -20.0, "q95": -10.0},
+        }
         fc = pd.Series([5000.0, 800.0, 3000.0])
         buckets = pd.Series(["18-24h", "18-24h", "0-4h"])
         assert list(A.risk_adjusted_wind(fc, buckets, calib, "raw")) == [5000, 800, 3000]
+        assert list(A.risk_adjusted_wind(fc, buckets, calib, "bias")) == [4600, 400, 3000]
         assert list(A.risk_adjusted_wind(fc, buckets, calib, "p90")) == [4000, 0, 3000]  # clipped at 0; negative buffer ignored
         assert list(A.risk_adjusted_wind(fc, buckets, calib, "p95")) == [3500, 0, 3000]
         thermal = A.thermal_procurement(25000.0, A.risk_adjusted_wind(fc, buckets, calib, "p90"))
@@ -165,6 +169,19 @@ class TestProcurement:
         assert d["meta"]["total_recommended_thermal_mwh"] == pytest.approx(total, rel=1e-6)
         assert sum(b["count"] for b in d["error_distribution"]) == d["kpis"]["sample_count"]
         assert sum(day["recommended_thermal_mwh"] for day in d["daily_summary"]) == pytest.approx(total, rel=1e-6)
+        m = d["meta"]
+        # buy - needed = long - short, period by period, so the totals must reconcile.
+        net = m["total_recommended_thermal_mwh"] - m["total_actual_thermal_needed_mwh"]
+        assert net == pytest.approx(m["total_over_procured_mwh"] - m["total_residual_shortfall_mwh"], abs=1.0)
+
+    def test_posture_ordering_on_real_data(self, loaded_store):
+        totals = {}
+        for posture in ("raw", "bias", "p90", "p95"):
+            d = A.build_dashboard(loaded_store, A.DashboardParams(date(2026, 1, 2), date(2026, 2, 1), risk_posture=posture))
+            totals[posture] = (d["meta"]["total_recommended_thermal_mwh"], d["meta"]["total_residual_shortfall_mwh"])
+        # More conservative postures buy more thermal and leave less short exposure.
+        assert totals["raw"][0] < totals["bias"][0] < totals["p90"][0] < totals["p95"][0]
+        assert totals["raw"][1] > totals["bias"][1] > totals["p90"][1] > totals["p95"][1]
 
     def test_decision_dates_are_january(self, loaded_store):
         d = A.build_dashboard(loaded_store, A.DashboardParams(date(2026, 1, 2), date(2026, 2, 1)))

@@ -38,7 +38,8 @@ export const COLORS = {
 };
 
 export const POSTURE_LABEL: Record<string, string> = {
-  raw: "Raw forecast (P50)",
+  raw: "Raw forecast",
+  bias: "Bias-corrected (median)",
   p90: "P90 conservative buffer",
   p95: "P95 stress buffer",
 };

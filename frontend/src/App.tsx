@@ -10,8 +10,9 @@ import { api } from "./services/apiClient";
 import type { DashboardParams, DashboardResponse, HealthResponse } from "./types/api";
 
 export const DEFAULT_PARAMS: DashboardParams = {
-  start_date: "2026-01-01",
-  end_date: "2026-01-31",
+  // Purchase decisions made 1–31 Jan 2026 on D-1 => delivery days 2 Jan .. 1 Feb.
+  start_date: "2026-01-02",
+  end_date: "2026-02-01",
   selection_mode: "day_ahead_cutoff",
   cutoff_hour_utc: 10,
   min_horizon_hours: 24,
@@ -34,7 +35,7 @@ export default function App() {
 
   useEffect(() => {
     api.health().then(setHealth).catch((e) => setHealthError(String(e.message ?? e)));
-    // The executive briefing always reports the canonical scenario (full month, D-1 10:00, P90).
+    // The executive briefing always reports the canonical scenario (all Jan 2026 decisions, D-1 10:00, P90).
     api.dashboard(DEFAULT_PARAMS).then(setBaseline).catch(() => undefined);
   }, []);
 

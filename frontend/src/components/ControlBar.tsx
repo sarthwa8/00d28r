@@ -2,6 +2,7 @@ import { CalendarDays, Clock, Gauge, Shield } from "lucide-react";
 import type { DashboardParams, RiskPosture } from "../types/api";
 
 export const PRESETS = [
+  { id: "decisions", label: "Jan 2026 decisions (deliver 2 Jan–1 Feb)", start: "2026-01-02", end: "2026-02-01" },
   { id: "month", label: "Full Month (Jan 2026)", start: "2026-01-01", end: "2026-01-31" },
   { id: "w1", label: "Week 1 (Jan 1–7)", start: "2026-01-01", end: "2026-01-07" },
   { id: "w2", label: "Week 2 (Jan 8–14)", start: "2026-01-08", end: "2026-01-14" },
@@ -145,9 +146,14 @@ export function ControlBar({ params, onChange, loading }: Props) {
             <Shield className="h-3.5 w-3.5" /> Hedging buffer
           </span>
           <div className="seg flex-wrap">
-            {(["raw", "p90", "p95"] as RiskPosture[]).map((r) => (
-              <button key={r} aria-pressed={params.risk_posture === r} onClick={() => onChange({ risk_posture: r })}>
-                {r === "raw" ? "Raw P50" : r.toUpperCase()}
+            {(["raw", "bias", "p90", "p95"] as RiskPosture[]).map((r) => (
+              <button
+                key={r}
+                aria-pressed={params.risk_posture === r}
+                onClick={() => onChange({ risk_posture: r })}
+                title={{ raw: "Trust the forecast as published", bias: "Remove the median historical error for this lead time", p90: "Cover 90% of historical shortfalls", p95: "Cover 95% of historical shortfalls" }[r]}
+              >
+                {{ raw: "Raw", bias: "De-bias", p90: "P90", p95: "P95" }[r]}
               </button>
             ))}
           </div>

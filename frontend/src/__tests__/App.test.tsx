@@ -38,7 +38,7 @@ const dashboard: DashboardResponse = {
     min_horizon_hours: 24, resolution: "half_hourly", demand_mw: 25000, risk_posture: "p90", period_hours: 0.5,
     settlement_periods: 48, matched_sample_count: 48, total_actual_mwh: 240000, total_forecast_mwh: 288000,
     total_risk_adjusted_wind_mwh: 192000, total_recommended_thermal_mwh: 408000, total_actual_thermal_needed_mwh: 360000,
-    total_residual_shortfall_mwh: 1000, all_pairs_sample_count: 700, data_source: "snapshot", data_fetched_at_utc: "2026-10-25T00:00:00Z",
+    total_residual_shortfall_mwh: 1000, total_over_procured_mwh: 49000, all_pairs_sample_count: 700, data_source: "snapshot", data_fetched_at_utc: "2026-10-25T00:00:00Z",
   },
   kpis,
   timeseries: Array.from({ length: 48 }, (_, i) => point(i)),
@@ -52,7 +52,7 @@ const dashboard: DashboardResponse = {
   })),
   error_distribution: [{ bin_start_mw: -1000, bin_end_mw: 0, bin_center_mw: -500, count: 10, percentage: 20.8 }, { bin_start_mw: 0, bin_end_mw: 1000, bin_center_mw: 500, count: 38, percentage: 79.2 }],
   daily_summary: [{ date: "2026-01-05", decision_date: "2026-01-04", settlement_periods: 48, actual_mwh: 240000, forecast_mwh: 288000, risk_adjusted_wind_mwh: 192000, recommended_thermal_mwh: 408000, residual_shortfall_mwh: 1000, mae_mw: 2000, mbe_mw: 2000, max_shortfall_mw: 2000 }],
-  calibration: [{ bucket_label: "24-36h", q10: -481.85, q90: 4235.5, q95: 5159, n: 6144 }],
+  calibration: [{ bucket_label: "24-36h", q10: -481.85, q50: 1500, q90: 4235.5, q95: 5159, n: 6144 }],
 };
 
 const health: HealthResponse = {

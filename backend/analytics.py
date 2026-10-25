@@ -17,7 +17,7 @@ from backend import config
 
 SelectionMode = Literal["day_ahead_cutoff", "horizon_hours"]
 Resolution = Literal["half_hourly", "hourly_native"]
-RiskPosture = Literal["raw", "p90", "p95"]
+RiskPosture = Literal["raw", "bias", "p90", "p95"]
 
 QUANTILES = {"p05": 5, "p10": 10, "p25": 25, "p50": 50, "p75": 75, "p90": 90, "p95": 95}
 
@@ -181,29 +181,31 @@ def error_metrics(forecast: np.ndarray, actual: np.ndarray) -> dict[str, float |
 
 
 def bucket_error_quantiles(pairs: pd.DataFrame) -> dict[str, dict[str, float]]:
-    """Empirical (q10, q90, q95) of signed error per lead-time bucket - the calibration table."""
+    """Empirical (q10, q50, q90, q95) of signed error per lead-time bucket - the calibration table."""
     if pairs.empty:
         return {}
     labelled = pairs.assign(bucket=bucket_label(pairs["horizon_hours"])).dropna(subset=["bucket"])
     out = {}
     for label, grp in labelled.groupby("bucket"):
         e = grp["error_mw"].to_numpy()
-        q10, q90, q95 = np.percentile(e, [10, 90, 95])
-        out[str(label)] = {"q10": float(q10), "q90": float(q90), "q95": float(q95), "n": int(len(e))}
+        q10, q50, q90, q95 = np.percentile(e, [10, 50, 90, 95])
+        out[str(label)] = {"q10": float(q10), "q50": float(q50), "q90": float(q90), "q95": float(q95), "n": int(len(e))}
     return out
 
 
 def risk_adjusted_wind(
     forecast_mw: pd.Series, buckets: pd.Series, calib: dict[str, dict[str, float]], posture: RiskPosture
 ) -> pd.Series:
-    """Wind the desk can rely on: forecast minus the horizon-conditional shortfall quantile.
+    """Wind the desk can rely on: forecast minus the horizon-conditional error quantile.
+
+    bias -> median error (centres the position), p90/p95 -> shortfall protection quantiles.
 
     The buffer is clipped at >= 0 so a historically under-forecasting bucket never makes the
     desk rely on *more* wind than was forecast.
     """
     if posture == "raw":
         return forecast_mw.astype(float)
-    key = "q90" if posture == "p90" else "q95"
+    key = {"bias": "q50", "p90": "q90", "p95": "q95"}[posture]
     buffer = buckets.map(lambda b: max(0.0, calib.get(b, {}).get(key, 0.0)) if isinstance(b, str) else 0.0)
     return (forecast_mw - buffer.astype(float)).clip(lower=0.0)
 
@@ -327,6 +329,8 @@ def build_dashboard(store, p: DashboardParams) -> dict:
     ts["actual_thermal_needed_mw"] = thermal_procurement(p.demand_mw, ts["actual_mw"])
     # Positive = thermal bought day-ahead fell short of what actual wind required (imbalance exposure).
     ts["residual_shortfall_mw"] = (ts["actual_thermal_needed_mw"] - ts["thermal_procurement_mw"]).clip(lower=0.0)
+    # Positive = thermal bought day-ahead exceeded what was needed (long position to sell back).
+    ts["over_procured_mw"] = (ts["thermal_procurement_mw"] - ts["actual_thermal_needed_mw"]).clip(lower=0.0)
 
     matched = ts.dropna(subset=["forecast_mw", "actual_mw"])
     m = error_metrics(matched["forecast_mw"].to_numpy(), matched["actual_mw"].to_numpy())
@@ -422,6 +426,7 @@ def build_dashboard(store, p: DashboardParams) -> dict:
         "total_recommended_thermal_mwh": _f(matched["thermal_procurement_mw"].sum() * ph),
         "total_actual_thermal_needed_mwh": _f(matched["actual_thermal_needed_mw"].sum() * ph),
         "total_residual_shortfall_mwh": _f(matched["residual_shortfall_mw"].sum() * ph),
+        "total_over_procured_mwh": _f(matched["over_procured_mw"].sum() * ph),
         "all_pairs_sample_count": int(len(pairs)),
         "data_source": store.source,
         "data_fetched_at_utc": store.metadata.get("fetched_at_utc"),

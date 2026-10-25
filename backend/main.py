@@ -88,7 +88,7 @@ def dashboard(
     min_horizon_hours: float = Query(config.DEFAULT_MIN_HORIZON_HOURS, ge=0.0, le=48.0),
     resolution: Literal["half_hourly", "hourly_native"] = "half_hourly",
     demand_mw: float = Query(config.DEFAULT_DEMAND_MW, ge=0.0, le=100000.0),
-    risk_posture: Literal["raw", "p90", "p95"] = "p90",
+    risk_posture: Literal["raw", "bias", "p90", "p95"] = "p90",
 ):
     ensure_loaded()
     s, e = _parse_date("start_date", start_date), _parse_date("end_date", end_date)

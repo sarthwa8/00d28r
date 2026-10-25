@@ -24,6 +24,7 @@ def test_health(client):
         ({"selection_mode": "horizon_hours", "min_horizon_hours": 12}, 31 * 48),
         ({"start_date": "2026-01-15", "end_date": "2026-01-15"}, 48),
         ({"resolution": "hourly_native"}, 31 * 24),
+        ({"start_date": "2026-01-02", "end_date": "2026-02-01", "risk_posture": "bias"}, 31 * 48),
         ({"start_date": "2026-02-01", "end_date": "2026-02-01", "risk_posture": "p95", "demand_mw": 30000}, 48),
     ],
 )

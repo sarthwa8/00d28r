@@ -188,7 +188,7 @@ export function AccuracyLabTab({ data, cutoffHour }: { data: DashboardResponse; 
         <h2 className="card-title">Risk-buffer calibration table</h2>
         <p className="card-sub mb-3">
           Empirical signed-error quantiles per lead-time bucket over the full January delivery window. These drive the P10–P90 band and
-          the P90/P95 relied-upon wind (buffer = max(0, q) so a buffer never adds wind).
+          the de-bias / P90 / P95 relied-upon wind (buffer = max(0, q) so a buffer never adds wind).
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
@@ -197,6 +197,7 @@ export function AccuracyLabTab({ data, cutoffHour }: { data: DashboardResponse; 
                 <th className="py-1.5">Lead time</th>
                 <th className="py-1.5 text-right">Samples</th>
                 <th className="py-1.5 text-right">q10 MW</th>
+                <th className="py-1.5 text-right">q50 MW (de-bias)</th>
                 <th className="py-1.5 text-right">q90 MW (P90 buffer)</th>
                 <th className="py-1.5 text-right">q95 MW (P95 buffer)</th>
                 <th className="py-1.5 text-right">Window MAE</th>
@@ -211,6 +212,7 @@ export function AccuracyLabTab({ data, cutoffHour }: { data: DashboardResponse; 
                     <td className="py-1.5 text-slate-300">{c.bucket_label}</td>
                     <td className="py-1.5 text-right text-slate-400">{c.n.toLocaleString("en-GB")}</td>
                     <td className="py-1.5 text-right">{fmtSigned(c.q10)}</td>
+                    <td className="py-1.5 text-right text-sky-300">{fmtSigned(c.q50)}</td>
                     <td className="py-1.5 text-right text-amber-300">{fmtSigned(c.q90)}</td>
                     <td className="py-1.5 text-right text-amber-300">{fmtSigned(c.q95)}</td>
                     <td className="py-1.5 text-right">{fmtMW(h?.mae_mw)}</td>

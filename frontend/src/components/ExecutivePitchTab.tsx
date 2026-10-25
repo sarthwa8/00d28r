@@ -1,6 +1,24 @@
-import { AlertTriangle, CheckCircle2, Clock, Database, Layers, Server, ShieldCheck, TrendingUp } from "lucide-react";
-import type { DashboardResponse, HealthResponse } from "../types/api";
-import { fmtGWh, fmtMW, fmtPct, fmtSigned, fmtTime } from "../lib/format";
+import { useEffect, useState } from "react";
+import { AlertTriangle, CheckCircle2, Clock, Database, Layers, Scale, Server, ShieldCheck, TrendingUp } from "lucide-react";
+import { api } from "../services/apiClient";
+import type { DashboardMeta, DashboardResponse, HealthResponse, RiskPosture } from "../types/api";
+import { POSTURE_LABEL, fmtGWh, fmtMW, fmtPct, fmtSigned, fmtTime } from "../lib/format";
+
+const POSTURES: RiskPosture[] = ["raw", "bias", "p90", "p95"];
+
+/** Re-runs the canonical scenario under each hedging posture to show the short-vs-long trade-off. */
+function usePostureComparison(baseline: DashboardResponse | null) {
+  const [rows, setRows] = useState<Record<string, DashboardMeta>>({});
+  useEffect(() => {
+    if (!baseline) return;
+    const ctrl = new AbortController();
+    Promise.all(POSTURES.map((risk_posture) => api.dashboard({ ...baseline.meta, risk_posture }, ctrl.signal)))
+      .then((res) => setRows(Object.fromEntries(res.map((r) => [r.meta.risk_posture, r.meta]))))
+      .catch(() => undefined);
+    return () => ctrl.abort();
+  }, [baseline]);
+  return rows;
+}
 
 interface Props {
   baseline: DashboardResponse | null;
@@ -8,6 +26,7 @@ interface Props {
 }
 
 export function ExecutivePitchTab({ baseline, health }: Props) {
+  const postures = usePostureComparison(baseline);
   if (!baseline) return <p className="animate-pulse text-sm text-slate-400">Computing January 2026 findings…</p>;
   const { kpis, meta } = baseline;
   const hz = baseline.horizon_accuracy.filter((b) => b.sample_count > 0);
@@ -28,8 +47,8 @@ export function ExecutivePitchTab({ baseline, health }: Props) {
     {
       icon: ShieldCheck,
       tone: "text-amber-300",
-      title: `Hold ≈${fmtMW(kpis.p90_shortfall_buffer_mw)} MW of P90 shortfall cover`,
-      body: `Buying ${fmtMW(kpis.p90_shortfall_buffer_mw)} MW of extra thermal (P90) means wind under-delivery exceeded the buffer in only 1 period in 10; ${fmtMW(kpis.p95_shortfall_buffer_mw)} MW covers 19 in 20. Over January the P90 posture buys ${fmtGWh(meta.total_recommended_thermal_mwh)} day-ahead and leaves ${fmtGWh(meta.total_residual_shortfall_mwh)} to the imbalance market.`,
+      title: `≈${fmtMW(kpis.p90_shortfall_buffer_mw)} MW buys P90 shortfall protection`,
+      body: `Holding ${fmtMW(kpis.p90_shortfall_buffer_mw)} MW of extra thermal (P90) means wind under-delivery exceeded the buffer in only 1 period in 10; ${fmtMW(kpis.p95_shortfall_buffer_mw)} MW covers 19 in 20. Over these deliveries the P90 posture leaves just ${fmtGWh(meta.total_residual_shortfall_mwh)} short, but over-buys ${fmtGWh(meta.total_over_procured_mwh)}. The trade-off table below makes that choice explicit.`,
     },
     {
       icon: Clock,
@@ -49,7 +68,7 @@ export function ExecutivePitchTab({ baseline, health }: Props) {
     <div className="space-y-6">
       <section className="card overflow-hidden">
         <div className="bg-gradient-to-r from-emerald-500/10 via-sky-500/10 to-transparent p-6">
-          <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400">Pilot findings · January 2026 day-ahead decisions</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-emerald-400">Pilot findings · every day-ahead decision made in January 2026</p>
           <h2 className="mt-2 max-w-3xl text-2xl font-bold tracking-tight text-white">
             The wind forecast you trade on was {fmtMW(kpis.mae_mw)} MW off on average, and {fmtPct(kpis.shortfall_period_pct, 0)} of the time it was too high.
           </h2>
@@ -80,10 +99,53 @@ export function ExecutivePitchTab({ baseline, health }: Props) {
       </section>
 
       <section className="card p-5">
+        <div className="flex items-center gap-2">
+          <Scale className="h-5 w-5 text-sky-300" />
+          <h3 className="font-semibold text-white">Hedging posture trade-off: what each choice would have cost in January</h3>
+        </div>
+        <p className="mt-1 text-xs text-slate-400">
+          Same decisions (D-1 10:00 cutoff, {fmtMW(meta.demand_mw)} MW demand), four ways of trusting the forecast. Short = volume left to
+          the imbalance market when wind under-delivered; long = thermal bought that realised wind made unnecessary.
+        </p>
+        <div className="mt-3 overflow-x-auto">
+          <table className="w-full text-sm" aria-label="Posture trade-off">
+            <thead className="text-left text-[11px] uppercase tracking-wider text-slate-500">
+              <tr>
+                <th className="py-2">Posture</th>
+                <th className="py-2 text-right">Day-ahead thermal buy</th>
+                <th className="py-2 text-right">Short (imbalance)</th>
+                <th className="py-2 text-right">Long (over-bought)</th>
+                <th className="py-2 text-right">Net vs hindsight</th>
+              </tr>
+            </thead>
+            <tbody className="num">
+              {POSTURES.map((p) => {
+                const m = postures[p];
+                const net = m ? (m.total_recommended_thermal_mwh ?? 0) - (m.total_actual_thermal_needed_mwh ?? 0) : null;
+                return (
+                  <tr key={p} className={`border-t border-slate-800 ${p === "bias" ? "bg-sky-500/5" : ""}`}>
+                    <td className="py-2 font-sans text-slate-200">{POSTURE_LABEL[p]}</td>
+                    <td className="py-2 text-right text-amber-300">{fmtGWh(m?.total_recommended_thermal_mwh)}</td>
+                    <td className="py-2 text-right text-rose-300">{fmtGWh(m?.total_residual_shortfall_mwh)}</td>
+                    <td className="py-2 text-right text-sky-300">{fmtGWh(m?.total_over_procured_mwh)}</td>
+                    <td className="py-2 text-right">{net == null ? "—" : `${net > 0 ? "+" : ""}${fmtGWh(net)}`}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-2 text-xs text-slate-400">
+          Trading the raw forecast leaves the desk structurally short. Removing the median lead-time-specific bias almost exactly
+          balances the book; P90/P95 buy insurance against the tail at the cost of a long position.
+        </p>
+      </section>
+
+      <section className="card p-5">
         <h3 className="font-semibold text-white">Operational recommendations for the trading desk</h3>
         <ol className="mt-3 space-y-2 text-sm text-slate-300">
           {[
-            `Never buy against the raw WINDFOR number. Use the P90 relied-upon wind on the Procurement Desk; for 24–36h-ahead forecasts that means a ${fmtMW(p90?.q90)} MW haircut.`,
+            `Never buy against the raw WINDFOR number. Make the de-biased forecast the default (a ${fmtMW(p90?.q50)} MW haircut at 24–36h lead) and step up to P90 (${fmtMW(p90?.q90)} MW) when imbalance prices are expected to spike.`,
             "Size the day-ahead thermal buy per settlement period from the 48-SP schedule (CSV export feeds straight into the bid sheet).",
             `Use a later cutoff where the auction allows: the 24–36h bucket's MAE is ${fmtMW(baseline.horizon_accuracy.find((b) => b.bucket_label === "24-36h")?.mae_mw)} MW vs ${fmtMW(baseline.horizon_accuracy.find((b) => b.bucket_label === "12-18h")?.mae_mw)} MW at 12–18h.`,
             `Watch the ${worstHour?.label} UTC window: that's where forecast error peaks, so it carries the highest imbalance exposure.`,
@@ -126,7 +188,7 @@ export function ExecutivePitchTab({ baseline, health }: Props) {
             <code>/api/v1/dashboard</code> ~60 ms full month
           </Box>
           <Box icon={TrendingUp} title="React + Recharts SPA" tone="border-amber-800">
-            Typed client mirrors Pydantic schemas · 3 workspaces · CSV export · revision inspector
+            Typed client mirrors Pydantic schemas · 3 workspaces · 4 hedging postures · CSV export · revision inspector
             <br />
             Served by FastAPI (Docker/Heroku) or Vercel CDN + Python function
           </Box>
@@ -139,7 +201,7 @@ export function ExecutivePitchTab({ baseline, health }: Props) {
             <p className="num">Horizon mode: t − 48h ≤ pub ≤ t − H_min</p>
             <p className="num">MAPE = mean(|e| / max(y, 100 MW))</p>
             <p className="num">B90 = max(0, P90(e)),  B95 = max(0, P95(e))</p>
-            <p className="num">relied wind = max(0, ŷ − max(0, q90[bucket(h)]))</p>
+            <p className="num">relied wind = max(0, ŷ − max(0, q[bucket(h)])),  q ∈ {"{"}q50, q90, q95{"}"}</p>
             <p className="num">thermal buy = max(0, demand − relied wind);  MWh = MW × 0.5h</p>
           </div>
           <div className="rounded-lg border border-slate-800 bg-slate-950/60 p-4 text-xs leading-relaxed text-slate-300">
@@ -159,8 +221,10 @@ export function ExecutivePitchTab({ baseline, health }: Props) {
           </div>
         </div>
         <p className="mt-4 text-[11px] text-slate-500">
-          Scope note: actuals are transmission-metered FUELHH wind only; WINDFOR targets the same metered fleet. Buffers are calibrated
-          in-sample on January 2026; in production they would use a trailing window. Snapshot fetched {health?.fetched_at_utc ?? "—"}.
+          Scope note: delivery days {meta.start_date} → {meta.end_date} (decisions made 1–31 Jan 2026). FUELHH outturn is metered,
+          post-curtailment output; a plausible driver of the positive bias is wind constrained off by NESO, which is worth validating
+          with the client. Buffers are calibrated in-sample on January 2026; in production they would use a trailing window. Snapshot
+          fetched {health?.fetched_at_utc ?? "—"}.
         </p>
       </section>
     </div>

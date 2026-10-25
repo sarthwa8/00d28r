@@ -1,7 +1,7 @@
 // Mirrors backend/schemas.py (Pydantic v2 response models).
 export type SelectionMode = "day_ahead_cutoff" | "horizon_hours";
 export type Resolution = "half_hourly" | "hourly_native";
-export type RiskPosture = "raw" | "p90" | "p95";
+export type RiskPosture = "raw" | "bias" | "p90" | "p95";
 type Num = number | null;
 
 export interface DashboardParams {
@@ -47,6 +47,7 @@ export interface DashboardMeta {
   total_recommended_thermal_mwh: Num;
   total_actual_thermal_needed_mwh: Num;
   total_residual_shortfall_mwh: Num;
+  total_over_procured_mwh: Num;
   all_pairs_sample_count: number;
   data_source: string;
   data_fetched_at_utc: string | null;
@@ -151,6 +152,7 @@ export interface DailySummary {
 export interface CalibrationBucket {
   bucket_label: string;
   q10: Num;
+  q50: Num;
   q90: Num;
   q95: Num;
   n: number;
