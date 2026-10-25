@@ -209,7 +209,7 @@ export function ExecutivePitchTab({ baseline, health }: Props) {
             {[
               "Point-in-time correctness: no forecast published after the decision cutoff is ever used (property-tested on real data).",
               "Deterministic snapshot → reproducible numbers in the demo, tests and every deployment; live refresh endpoint for new data.",
-              "36 pytest cases: synthetic-vector maths, as-of invariants, data integrity, API contract + error handling.",
+              "38 pytest cases: synthetic-vector maths, as-of invariants, data integrity, API contract + error handling.",
               "Vitest component tests; strict TypeScript; Pydantic response models are the single API contract.",
               "One multi-stage Dockerfile serves SPA + API; same code runs on Vercel (api/index.py) and Heroku (Procfile).",
             ].map((t) => (
