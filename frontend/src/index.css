@@ -2,8 +2,109 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theme tokens. Channels are space-separated RGB so Tailwind opacity modifiers work.
+ * Series hues were validated with the dataviz palette checker for each surface:
+ *   light  forecast #6250d6 · actual #0f9d8a · thermal #d98a00 · short #dc3d5c · long #2a78d6  (surface #ffffff)
+ *   dark   forecast #9085e9 · actual #179e88 · thermal #c98500 · short #e5577a · long #3987e5  (surface #131d2c)
+ * Light thermal sits below 3:1 on white, so it always ships with labels or a table view.
+ */
 :root {
   color-scheme: light;
+  --paper: 238 242 245;
+  --panel: 255 255 255;
+  --ink: 19 35 58;
+  --ink-2: 74 93 120;
+  --ink-3: 112 128 150;
+  --rule: 213 222 232;
+  --shadow: 19 35 58;
+  --wind: 15 157 138;
+  --fcst: 98 80 214;
+  --thermal: 217 138 0;
+  --short: 220 61 92;
+  --long: 42 120 214;
+  --c-actual: #0f9d8a;
+  --c-forecast: #6250d6;
+  --c-thermal: #d98a00;
+  --c-short: #dc3d5c;
+  --c-long: #2a78d6;
+  --c-ink: #13233a;
+  --c-ink-3: #708096;
+  --c-rule: #d5dee8;
+  --c-grid: #e6ecf2;
+  --c-hover: rgba(19, 35, 58, 0.05);
+  --c-heat-mid: #e9edf2;
+  --c-panel: #ffffff;
+  --c-band: #6250d6;
+  --code-bg: #13233a;
+  --code-fg: #e6edf5;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --paper: 11 18 30;
+    --panel: 19 29 44;
+    --ink: 230 237 245;
+    --ink-2: 163 179 199;
+    --ink-3: 120 137 159;
+    --rule: 36 51 74;
+    --shadow: 0 0 0;
+    --wind: 23 158 136;
+    --fcst: 144 133 233;
+    --thermal: 201 133 0;
+    --short: 229 87 122;
+    --long: 57 135 229;
+    --c-actual: #179e88;
+    --c-forecast: #9085e9;
+    --c-thermal: #c98500;
+    --c-short: #e5577a;
+    --c-long: #3987e5;
+    --c-ink: #e6edf5;
+    --c-ink-3: #78899f;
+    --c-rule: #24334a;
+    --c-grid: #1c293c;
+    --c-hover: rgba(230, 237, 245, 0.05);
+    --c-heat-mid: #26344a;
+    --c-panel: #131d2c;
+    --c-band: #9085e9;
+    --code-bg: #0a111c;
+    --code-fg: #d8e2ee;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --paper: 11 18 30;
+  --panel: 19 29 44;
+  --ink: 230 237 245;
+  --ink-2: 163 179 199;
+  --ink-3: 120 137 159;
+  --rule: 36 51 74;
+  --shadow: 0 0 0;
+  --wind: 23 158 136;
+  --fcst: 144 133 233;
+  --thermal: 201 133 0;
+  --short: 229 87 122;
+  --long: 57 135 229;
+  --c-actual: #179e88;
+  --c-forecast: #9085e9;
+  --c-thermal: #c98500;
+  --c-short: #e5577a;
+  --c-long: #3987e5;
+  --c-ink: #e6edf5;
+  --c-ink-3: #78899f;
+  --c-rule: #24334a;
+  --c-grid: #1c293c;
+  --c-hover: rgba(230, 237, 245, 0.05);
+  --c-heat-mid: #26344a;
+  --c-panel: #131d2c;
+  --c-band: #9085e9;
+  --code-bg: #0a111c;
+  --code-fg: #d8e2ee;
+}
+
+:root {
   font-variation-settings: "wdth" 100;
 }
 
@@ -18,7 +119,13 @@ body {
 .font-condensed { font-variation-settings: "wdth" 75; }
 
 .num { font-variant-numeric: tabular-nums; }
+/* Large standalone figures keep proportional digits; tabular only where numbers align. */
+.figure { font-variant-numeric: proportional-nums; }
 
+/* While a new slice loads, hold the previous render dimmed instead of flashing a skeleton. */
+.is-refetching { opacity: 0.55; transition: opacity 160ms ease; pointer-events: none; }
+
+@layer components {
 .panel {
   @apply rounded-2xl border border-rule bg-panel shadow-lift;
 }
@@ -44,31 +151,36 @@ body {
 }
 
 .seg > button[aria-pressed="true"] {
-  @apply bg-ink text-white shadow-sm;
+  @apply bg-ink text-panel shadow-sm;
 }
 
 .input {
-  @apply num rounded-lg border border-rule bg-white px-2.5 py-1.5 text-[13px] text-ink focus:border-fcst focus:outline-none focus:ring-2 focus:ring-fcst/20;
+  @apply num rounded-lg border border-rule bg-panel px-2.5 py-1.5 text-[13px] text-ink focus:border-fcst focus:outline-none focus:ring-2 focus:ring-fcst/20;
+}
 }
 
 :focus-visible {
-  outline: 2px solid #4d63d9;
+  outline: 2px solid var(--c-forecast);
   outline-offset: 2px;
 }
 
-input[type="range"] { accent-color: #13233a; }
+input[type="range"] { accent-color: var(--c-forecast); }
 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #cdd6e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: rgb(var(--rule)); border-radius: 4px; }
 ::-webkit-scrollbar-track { background: transparent; }
 
-.recharts-cartesian-grid line { stroke: #e3e9f0; }
-.recharts-text { fill: #7b8ba1; font-size: 11px; font-family: Archivo, sans-serif; }
-.recharts-legend-item-text { color: #4a5d78 !important; font-size: 12px; }
+/* Gridlines and axes: solid hairlines one step off the surface, never dashed. */
+.recharts-cartesian-grid line { stroke: var(--c-grid); stroke-width: 1; stroke-dasharray: none; }
+.recharts-text { fill: var(--c-ink-3); font-size: 11px; font-family: Archivo, sans-serif; font-variant-numeric: tabular-nums; }
+.recharts-legend-item-text { color: rgb(var(--ink-2)) !important; font-size: 12px; }
+.recharts-brush-texts text { fill: var(--c-ink-3); }
+
+.code-block { background: var(--code-bg); color: var(--code-fg); }
 
 /* Synoptic isobar texture used behind the briefing hero. */
 .isobars {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='300' viewBox='0 0 600 300'%3E%3Cg fill='none' stroke='%2313233A' stroke-opacity='0.06' stroke-width='1.2'%3E%3Cpath d='M-20 220 C 80 160 160 250 260 190 S 440 120 620 180'/%3E%3Cpath d='M-20 180 C 90 120 170 210 270 150 S 450 80 620 140'/%3E%3Cpath d='M-20 140 C 100 80 180 170 280 110 S 460 40 620 100'/%3E%3Cpath d='M-20 100 C 110 40 190 130 290 70 S 470 0 620 60'/%3E%3Cpath d='M-20 260 C 70 200 150 290 250 230 S 430 160 620 220'/%3E%3C/g%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='300' viewBox='0 0 600 300'%3E%3Cg fill='none' stroke='%237888A0' stroke-opacity='0.12' stroke-width='1.2'%3E%3Cpath d='M-20 220 C 80 160 160 250 260 190 S 440 120 620 180'/%3E%3Cpath d='M-20 180 C 90 120 170 210 270 150 S 450 80 620 140'/%3E%3Cpath d='M-20 140 C 100 80 180 170 280 110 S 460 40 620 100'/%3E%3Cpath d='M-20 100 C 110 40 190 130 290 70 S 470 0 620 60'/%3E%3Cpath d='M-20 260 C 70 200 150 290 250 230 S 430 160 620 220'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 900px 450px;
   background-position: right -120px top -60px;
   background-repeat: no-repeat;

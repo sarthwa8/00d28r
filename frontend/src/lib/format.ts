@@ -26,17 +26,21 @@ export const fmtDay = (isoDate: string) => {
   return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
 };
 
+/** Chart colours resolve through CSS variables so every chart follows the active theme. */
 export const COLORS = {
-  actual: "#0F9D8A",
-  forecast: "#4D63D9",
-  band: "#4D63D9",
-  risk: "#E08A00",
-  shortfall: "#D6453D",
-  thermal: "#E08A00",
-  long: "#2F7FC1",
-  muted: "#7B8BA1",
-  ink: "#13233A",
-  violet: "#8B5CF6",
+  actual: "var(--c-actual)",
+  forecast: "var(--c-forecast)",
+  band: "var(--c-band)",
+  risk: "var(--c-thermal)",
+  shortfall: "var(--c-short)",
+  thermal: "var(--c-thermal)",
+  long: "var(--c-long)",
+  muted: "var(--c-ink-3)",
+  ink: "var(--c-ink)",
+  rule: "var(--c-rule)",
+  grid: "var(--c-grid)",
+  hover: "var(--c-hover)",
+  panel: "var(--c-panel)",
 };
 
 export const POSTURE_LABEL: Record<string, string> = {
@@ -45,3 +49,10 @@ export const POSTURE_LABEL: Record<string, string> = {
   p90: "P90 conservative buffer",
   p95: "P95 stress buffer",
 };
+
+/** Clean y-axis ticks: 0 up to the next multiple of `step` above the data (5 GW steps by default). */
+export function roundTicks(values: (number | null | undefined)[], step = 5000): number[] {
+  const max = Math.max(step, ...values.filter((v): v is number => v != null));
+  const top = Math.ceil((max * 1.04) / step) * step; // a little headroom so peaks never sit on the frame
+  return Array.from({ length: top / step + 1 }, (_, i) => i * step);
+}

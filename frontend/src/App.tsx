@@ -8,6 +8,7 @@ import { ClientBriefingTab } from "./components/ClientBriefingTab";
 import { TechReviewTab } from "./components/TechReviewTab";
 import { ForecastEvolutionModal } from "./components/ForecastEvolutionModal";
 import { api } from "./services/apiClient";
+import { useTheme } from "./lib/theme";
 import type { DashboardParams, DashboardResponse, HealthResponse } from "./types/api";
 
 export const DEFAULT_PARAMS: DashboardParams = {
@@ -22,8 +23,20 @@ export const DEFAULT_PARAMS: DashboardParams = {
   risk_posture: "p90",
 };
 
+const TAB_ORDER: TabId[] = ["desk", "lab", "briefing", "tech"];
+const tabFromHash = (): TabId => {
+  const h = window.location.hash.replace("#", "") as TabId;
+  return TAB_ORDER.includes(h) ? h : "desk";
+};
+
 export default function App() {
-  const [tab, setTab] = useState<TabId>("desk");
+  const [tab, setTabState] = useState<TabId>(tabFromHash);
+  const { theme, toggle: toggleTheme } = useTheme();
+  // The tab lives in the URL hash, so a refresh or a shared link lands on the same workspace.
+  const setTab = useCallback((t: TabId) => {
+    setTabState(t);
+    if (window.location.hash !== `#${t}`) window.history.replaceState(null, "", `#${t}`);
+  }, []);
   const [params, setParams] = useState<DashboardParams>(DEFAULT_PARAMS);
   const [data, setData] = useState<DashboardResponse | null>(null);
   const [baseline, setBaseline] = useState<DashboardResponse | null>(null);
@@ -60,21 +73,38 @@ export default function App() {
     };
   }, [params]);
 
+  useEffect(() => {
+    // Keys 1–4 jump between workspaces (handy while presenting); ignored while typing in a field.
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      if (e.metaKey || e.ctrlKey || e.altKey || ["INPUT", "SELECT", "TEXTAREA"].includes(el.tagName)) return;
+      const i = Number(e.key) - 1;
+      if (i >= 0 && i < TAB_ORDER.length) setTab(TAB_ORDER[i]);
+    };
+    const onHash = () => setTabState(tabFromHash());
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("hashchange", onHash);
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      window.removeEventListener("hashchange", onHash);
+    };
+  }, [setTab]);
+
   const onChange = useCallback((patch: Partial<DashboardParams>) => setParams((p) => ({ ...p, ...patch })), []);
   const closeInspect = useCallback(() => setInspect(null), []);
 
   return (
     <div className="min-h-screen">
-      <Header tab={tab} onTab={setTab} health={health} healthError={healthError} />
+      <Header tab={tab} onTab={setTab} health={health} healthError={healthError} theme={theme} onToggleTheme={toggleTheme} />
       <main className="mx-auto max-w-[1560px] px-4 py-6 sm:px-6">
         {tab === "briefing" ? (
-          <ClientBriefingTab baseline={baseline} />
+          <ClientBriefingTab baseline={baseline} onInspect={setInspect} />
         ) : tab === "tech" ? (
           <TechReviewTab baseline={baseline} health={health} />
         ) : (
           <div className="grid items-start gap-5 lg:grid-cols-[300px_minmax(0,1fr)]">
             <ControlBar params={params} onChange={onChange} loading={loading} />
-            <div className="min-w-0 space-y-4">
+            <div className={`min-w-0 space-y-4 ${loading && data ? "is-refetching" : ""}`} aria-busy={loading}>
               {error && (
                 <div className="flex items-center gap-2 rounded-xl bg-short/10 px-4 py-3 text-sm text-short ring-1 ring-short/30" role="alert">
                   <AlertTriangle className="h-4 w-4" /> {error}
@@ -85,7 +115,7 @@ export default function App() {
               ) : tab === "desk" ? (
                 <ProcurementDeskTab data={data} onInspect={setInspect} />
               ) : (
-                <AccuracyLabTab data={data} cutoffHour={params.cutoff_hour_utc} />
+                <AccuracyLabTab data={data} cutoffHour={params.cutoff_hour_utc} onInspect={setInspect} />
               )}
             </div>
           </div>

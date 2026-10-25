@@ -49,10 +49,10 @@ export function ControlBar({ params, onChange, loading }: Props) {
               aria-pressed={preset === p.id}
               className={`rounded-lg border px-2.5 py-1.5 text-left transition-colors ${
                 p.id === "decisions" ? "col-span-2" : ""
-              } ${preset === p.id ? "border-ink bg-ink text-white" : "border-rule bg-white text-ink hover:border-ink-3"}`}
+              } ${preset === p.id ? "border-ink bg-ink text-panel" : "border-rule bg-panel text-ink hover:border-ink-3"}`}
             >
               <span className="block text-[13px] font-medium">{p.label}</span>
-              <span className={`num block text-[11px] ${preset === p.id ? "text-white/70" : "text-ink-3"}`}>{p.hint}</span>
+              <span className={`num block text-[11px] ${preset === p.id ? "text-panel/70" : "text-ink-3"}`}>{p.hint}</span>
             </button>
           ))}
         </div>

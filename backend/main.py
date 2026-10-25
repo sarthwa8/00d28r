@@ -138,16 +138,28 @@ async def not_found(request, exc):
     if request.url.path.startswith("/api") or not (config.FRONTEND_DIST / "index.html").exists():
         detail = getattr(exc, "detail", "Not Found")
         return JSONResponse({"detail": detail}, status_code=404)
-    return FileResponse(config.FRONTEND_DIST / "index.html")
+    return FileResponse(config.FRONTEND_DIST / "index.html", headers=NO_CACHE)
+
+
+# The HTML shell must revalidate on every load so a redeploy is picked up; hashed assets can be cached forever.
+NO_CACHE = {"Cache-Control": "no-cache"}
+
+
+class ImmutableStaticFiles(StaticFiles):
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        if response.status_code == 200:
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
 
 
 if (config.FRONTEND_DIST / "index.html").exists():
     if (config.FRONTEND_DIST / "assets").exists():
-        app.mount("/assets", StaticFiles(directory=config.FRONTEND_DIST / "assets"), name="assets")
+        app.mount("/assets", ImmutableStaticFiles(directory=config.FRONTEND_DIST / "assets"), name="assets")
 
     @app.get("/", include_in_schema=False)
     def spa_index():
-        return FileResponse(config.FRONTEND_DIST / "index.html")
+        return FileResponse(config.FRONTEND_DIST / "index.html", headers=NO_CACHE)
 
     @app.get("/{path:path}", include_in_schema=False)
     def spa_files(path: str):
@@ -156,4 +168,4 @@ if (config.FRONTEND_DIST / "index.html").exists():
         candidate = (config.FRONTEND_DIST / path).resolve()
         if candidate.is_file() and config.FRONTEND_DIST.resolve() in candidate.parents:
             return FileResponse(candidate)
-        return FileResponse(config.FRONTEND_DIST / "index.html")
+        return FileResponse(config.FRONTEND_DIST / "index.html", headers=NO_CACHE)

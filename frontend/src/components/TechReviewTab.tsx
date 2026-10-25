@@ -121,12 +121,12 @@ function Pipeline({ health, baseline }: Props) {
               onClick={() => setActive(s.id)}
               aria-pressed={active === s.id}
               className={`h-full w-full rounded-xl px-3.5 py-3 text-left ring-1 transition-colors ${
-                active === s.id ? "bg-ink text-white ring-ink" : "bg-paper text-ink ring-rule hover:bg-white"
+                active === s.id ? "bg-ink text-panel ring-ink" : "bg-paper text-ink ring-rule hover:bg-panel"
               }`}
             >
-              <span className={`num text-[11px] ${active === s.id ? "text-white/60" : "text-ink-3"}`}>Step {i + 1}</span>
+              <span className={`num text-[11px] ${active === s.id ? "text-panel/60" : "text-ink-3"}`}>Step {i + 1}</span>
               <span className="mt-0.5 block text-[14px] font-semibold">{s.name}</span>
-              <span className={`block text-[12px] ${active === s.id ? "text-white/70" : "text-ink-2"}`}>{s.sub}</span>
+              <span className={`block text-[12px] ${active === s.id ? "text-panel/70" : "text-ink-2"}`}>{s.sub}</span>
             </button>
             {i < stages.length - 1 && (
               <span className="absolute -right-2 top-1/2 z-10 hidden -translate-y-1/2 text-ink-3 lg:block" aria-hidden>
@@ -206,17 +206,17 @@ function LookAheadTimeline() {
       {data ? (
         <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_260px]">
           <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img" aria-label="Forecast runs against the decision cutoff">
-            <rect x={xs(cutoff)} y={pad.t} width={W - pad.r - xs(cutoff)} height={H - pad.t - pad.b} fill="#13233A" opacity={0.05} />
+            <rect x={xs(cutoff)} y={pad.t} width={W - pad.r - xs(cutoff)} height={H - pad.t - pad.b} fill="var(--c-ink)" opacity={0.06} />
             {ticksY.map((v) => (
               <g key={v}>
-                <line x1={pad.l} x2={W - pad.r} y1={ys(v)} y2={ys(v)} stroke="#E3E9F0" />
-                <text x={pad.l - 8} y={ys(v) + 4} textAnchor="end" className="num" fontSize="11" fill="#7B8BA1">
+                <line x1={pad.l} x2={W - pad.r} y1={ys(v)} y2={ys(v)} stroke="var(--c-grid)" />
+                <text x={pad.l - 8} y={ys(v) + 4} textAnchor="end" className="num" fontSize="11" fill="var(--c-ink-3)">
                   {(v / 1000).toFixed(0)} GW
                 </text>
               </g>
             ))}
             {[48, 36, 24, 12, 0].map((h) => (
-              <text key={h} x={xs(target - h * 3600e3)} y={H - 12} textAnchor="middle" fontSize="11" fill="#7B8BA1">
+              <text key={h} x={xs(target - h * 3600e3)} y={H - 12} textAnchor="middle" fontSize="11" fill="var(--c-ink-3)">
                 {h === 0 ? "delivery" : `−${h} h`}
               </text>
             ))}
@@ -260,7 +260,7 @@ function LookAheadTimeline() {
             <text x={xs(cutoff) + 6} y={pad.t + 4} fontSize="12" fill={COLORS.ink} fontWeight={600}>
               cutoff
             </text>
-            <text x={W - pad.r - 6} y={pad.t + 18} textAnchor="end" fontSize="11" fill="#7B8BA1">
+            <text x={W - pad.r - 6} y={pad.t + 18} textAnchor="end" fontSize="11" fill="var(--c-ink-3)">
               not yet published
             </text>
           </svg>
@@ -277,11 +277,12 @@ function LookAheadTimeline() {
             </div>
             <div>
               <dt className="text-[12px] text-ink-2">Its forecast</dt>
-              <dd className="num font-semibold text-fcst">{chosen ? `${fmtMW(chosen.forecast_mw)} MW` : "—"}</dd>
+              <dd className="num font-semibold text-ink">{chosen ? `${fmtMW(chosen.forecast_mw)} MW` : "—"}</dd>
             </div>
             <div>
               <dt className="text-[12px] text-ink-2">Error the desk faced</dt>
-              <dd className={`num font-semi-expanded text-[22px] font-semibold ${(chosen?.error_mw ?? 0) > 0 ? "text-short" : "text-wind"}`}>
+              <dd className="figure font-semi-expanded flex items-center gap-2 text-[22px] font-semibold text-ink">
+                {chosen && <span className={`h-2.5 w-2.5 rounded-full ${(chosen.error_mw ?? 0) > 0 ? "bg-short" : "bg-long"}`} aria-hidden />}
                 {chosen ? `${fmtSigned(chosen.error_mw)} MW` : "—"}
               </dd>
             </div>
@@ -291,7 +292,7 @@ function LookAheadTimeline() {
         <p className="mt-6 animate-pulse text-sm text-ink-3">Loading forecast runs…</p>
       )}
 
-      <pre className="mt-6 overflow-x-auto rounded-xl bg-ink p-4 text-[12px] leading-relaxed text-white/90">
+      <pre className="mt-6 overflow-x-auto rounded-xl code-block p-4 text-[12px] leading-relaxed">
         <code>{`# simplified from backend/analytics.py · select_as_of_forecasts (day_ahead_cutoff mode)
 cutoff   = cand["startTime"].dt.floor("D") - pd.Timedelta(days=1) + pd.Timedelta(hours=cutoff_hour_utc)
 eligible = cand["publishTime"] <= cutoff                     # drop anything published after the decision
@@ -356,7 +357,7 @@ function ApiExplorer() {
               setRes(null);
             }}
             aria-pressed={sel === e.id}
-            className={`rounded-lg px-2.5 py-1.5 text-[13px] ring-1 ${sel === e.id ? "bg-ink text-white ring-ink" : "bg-white text-ink-2 ring-rule hover:text-ink"}`}
+            className={`rounded-lg px-2.5 py-1.5 text-[13px] ring-1 ${sel === e.id ? "bg-ink text-panel ring-ink" : "bg-panel text-ink-2 ring-rule hover:text-ink"}`}
           >
             {e.label}
           </button>
@@ -364,18 +365,21 @@ function ApiExplorer() {
       </div>
       <div className="mt-3 flex items-center gap-2">
         <code className="min-w-0 flex-1 truncate rounded-lg bg-paper px-3 py-2 text-[12px] text-ink-2 ring-1 ring-rule">{ep.url}</code>
-        <button onClick={run} disabled={busy} className="rounded-lg bg-fcst px-4 py-2 text-[13px] font-semibold text-white hover:bg-fcst/90 disabled:opacity-60">
+        <button onClick={run} disabled={busy} className="rounded-lg bg-fcst px-4 py-2 text-[13px] font-semibold text-panel hover:bg-fcst/90 disabled:opacity-60">
           {busy ? "Sending…" : "Send request"}
         </button>
       </div>
       {res && (
         <div className="mt-3 flex gap-4 text-[13px]">
-          <span className={`num font-semibold ${res.status >= 200 && res.status < 300 ? "text-wind" : "text-short"}`}>HTTP {res.status}</span>
+          <span className="num flex items-center gap-1.5 font-semibold text-ink">
+            <span className={`h-2 w-2 rounded-full ${res.status >= 200 && res.status < 300 ? "bg-wind" : "bg-short"}`} aria-hidden />
+            HTTP {res.status}
+          </span>
           <span className="num text-ink-2">{res.ms.toFixed(0)} ms</span>
           <span className="num text-ink-2">{(res.bytes / 1024).toFixed(1)} KB</span>
         </div>
       )}
-      <pre className="mt-3 max-h-80 min-h-[160px] flex-1 overflow-auto rounded-xl bg-ink p-4 text-[12px] leading-relaxed text-white/90">
+      <pre className="mt-3 max-h-80 min-h-[160px] flex-1 overflow-auto rounded-xl code-block p-4 text-[12px] leading-relaxed">
         <code>{res ? res.body : "Choose an endpoint and send a request."}</code>
       </pre>
     </section>
@@ -423,9 +427,9 @@ function MetricReference() {
 
 const SUITES = [
   { file: "backend/tests/test_analytics.py", count: 20, what: "Selection invariants on real data, interpolation, metrics against hand-computed vectors, posture ordering, MWh reconciliation." },
-  { file: "backend/tests/test_api.py", count: 14, what: "Every endpoint and parameter mode, schema shape, 400 on bad dates, 422 on bad enums, JSON 404s." },
+  { file: "backend/tests/test_api.py", count: 15, what: "Every endpoint and parameter mode, schema shape, 400 on bad dates, 422 on bad enums, JSON 404s, cache headers." },
   { file: "backend/tests/test_data_integrity.py", count: 4, what: "Snapshot loads, 48 periods every delivery day, horizons within 0–72 h, a forecast run on every January decision day." },
-  { file: "frontend/src/__tests__/App.test.tsx", count: 7, what: "Rendering, KPI values, controls reaching the API, the revision modal, tab switching, CSV export." },
+  { file: "frontend/src/__tests__/App.test.tsx", count: 9, what: "Rendering, KPI values, controls reaching the API, the revision modal, tabs, theme toggle, shortcuts, table views, CSV export." },
 ];
 
 function QualityEvidence() {
@@ -447,7 +451,7 @@ function QualityEvidence() {
                   <code className="text-[12px] text-fcst">{s.file}</code>
                   <p className="mt-1 text-[13px] leading-relaxed text-ink-2">{s.what}</p>
                 </td>
-                <td className="num py-3 text-right font-semi-expanded text-[20px] font-semibold text-wind">{s.count}</td>
+                <td className="figure py-3 text-right font-semi-expanded text-[20px] font-semibold text-ink">{s.count}</td>
               </tr>
             ))}
           </tbody>

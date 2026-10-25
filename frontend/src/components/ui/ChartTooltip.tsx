@@ -18,7 +18,7 @@ export function ChartTooltip({
     ? rows(payload)
     : payload.map((p) => ({ name: String(p.name), value: String(p.value), color: p.color }));
   return (
-    <div className="min-w-[180px] rounded-xl border border-rule bg-white/95 px-3 py-2 text-[12px] shadow-lift backdrop-blur">
+    <div className="min-w-[180px] rounded-xl border border-rule bg-panel/95 px-3 py-2 text-[12px] shadow-lift backdrop-blur">
       <div className="mb-1 font-semibold text-ink">{title ? title(label, payload) : String(label)}</div>
       {items.map((r) => (
         <div key={r.name} className="flex items-center justify-between gap-4 py-0.5">

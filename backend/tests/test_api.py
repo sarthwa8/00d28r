@@ -75,3 +75,13 @@ def test_evolution_bad_time(client):
 def test_unknown_api_path_is_json_404(client):
     r = client.get("/api/v1/nope")
     assert r.status_code == 404 and r.json()["detail"]
+
+
+def test_spa_cache_headers(client):
+    from backend import config
+
+    if not (config.FRONTEND_DIST / "index.html").exists():
+        pytest.skip("frontend not built")
+    assert client.get("/").headers["cache-control"] == "no-cache"
+    asset = next((config.FRONTEND_DIST / "assets").glob("*.js")).name
+    assert "immutable" in client.get(f"/assets/{asset}").headers["cache-control"]

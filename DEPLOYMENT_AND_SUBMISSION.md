@@ -4,7 +4,7 @@
 
 | Deliverable | Status |
 |---|---|
-| Application code, tests, Docker | ✅ Done and verified locally (pytest 38/38, Vitest 7/7, Vite build, `docker compose up` healthy) |
+| Application code, tests, Docker | ✅ Done and verified locally (pytest 39/39, Vitest 9/9, Vite build, `docker compose up` healthy) |
 | Public GitHub repo (anonymous name) | ✅ https://github.com/sarthwa8/00d28r (public, opens without login) |
 | Vercel deployment | ✅ https://windsight-00d28r.vercel.app (production, deployed with the Vercel CLI; page and API verified without login) |
 | YouTube video (unlisted, ≤10 min) | ⏳ Must be recorded by a person. Script below |
@@ -126,7 +126,7 @@ The buffers come from signed-error quantiles per lead-time bucket over all forec
 rely on *more* wind than the forecast. Thermal buy is demand minus relied-upon wind; short and long volumes reconcile exactly with the net, and a test checks that."
 
 **[7:50 · `backend/tests`, terminal running pytest + vitest]**
-"There are 38 pytest tests: synthetic vectors with hand-computed answers, as-of invariants asserted on the real data, data-integrity checks on the snapshot,
+"There are 39 pytest tests: synthetic vectors with hand-computed answers, as-of invariants asserted on the real data, data-integrity checks on the snapshot,
 and the API contract including 400s and 422s. On the frontend, Vitest covers rendering, controls, the modal and the CSV export. TypeScript is strict, and
 the Pydantic models are mirrored as TS types."
 

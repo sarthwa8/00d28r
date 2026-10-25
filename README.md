@@ -67,6 +67,13 @@ The app has two *Trade* workspaces for daily use and two *Present* workspaces th
 - Forecast evolution inspector (any settlement period, jump to worst shortfall).
 - Risk-buffer calibration table (q10/q50/q90/q95 per lead-time bucket).
 
+**Across the app**: light and dark themes (follows the OS, with a toggle; both palettes validated for colour-blind separation and
+contrast), keys 1–4 to switch workspaces, the workspace kept in the URL (`#desk`, `#lab`, `#briefing`, `#tech`), a table view behind
+every key chart, and the previous result held dimmed while a new one loads.
+
+**Error calendar** (Error lab and Client briefing): every half-hour of the window as one cell, 31 days × 48 settlement periods, on a
+seven-class diverging scale (crimson = forecast too high, blue = too low). Weather fronts show up as bands; click any cell for its revisions.
+
 **Client briefing (Present)**: the January story for the trading desk. A full-width chart of the forecast against actual wind with
 every over-forecast shaded, headline figures, the short-vs-long trade-off for each hedging posture, where the risk concentrates, and
 recommendations. Every number is computed live from the API.
@@ -108,7 +115,8 @@ and payload size, metric definitions, and test-suite evidence.
         ├── services/apiClient.ts   # Typed fetch client
         ├── lib/format.ts           # Number/time formatting, colour palette
         ├── components/             # Header, ControlBar, KpiStrip, ProcurementDeskTab, AccuracyLabTab,
-        │                           # ClientBriefingTab, TechReviewTab, ForecastEvolution(+Modal), ui/ChartTooltip
+        │                           # ClientBriefingTab, TechReviewTab, ErrorCalendar,
+        │                           # ForecastEvolution(+Modal), ui/ (ChartTooltip, ChartFrame, Sparkline)
         └── __tests__/              # Vitest + Testing Library
 ```
 
@@ -140,8 +148,8 @@ python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 
 **Tests:**
 ```bash
-.venv/bin/pytest                     # 38 backend tests
-cd frontend && npx vitest --run      # 7 frontend tests
+.venv/bin/pytest                     # 39 backend tests
+cd frontend && npx vitest --run      # 9 frontend tests
 ```
 
 ---
@@ -190,5 +198,5 @@ near 48h have sparse coverage.
 - **One codebase, three runtimes**: FastAPI serves the built SPA in Docker/Heroku. On Vercel the SPA is served from the CDN and
   `api/index.py` exposes the same ASGI app as a Python function.
 - **Contract**: Pydantic response models on the backend, mirrored by TypeScript types on the frontend.
-- **Verification performed**: pytest 38/38, Vitest 7/7, `tsc` + Vite production build clean, curl smoke tests against uvicorn and the
+- **Verification performed**: pytest 39/39, Vitest 9/9, `tsc` + Vite production build clean, curl smoke tests against uvicorn and the
   Docker container (SPA `200`, API `200`, container health check `healthy`, test suite also passing inside the container).

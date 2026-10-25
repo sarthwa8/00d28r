@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { Area, ComposedChart, Line, ReferenceDot, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api } from "../services/apiClient";
 import type { DashboardMeta, DashboardResponse, RiskPosture } from "../types/api";
-import { COLORS, POSTURE_LABEL, fmtGWh, fmtMW, fmtPct, fmtSigned, fmtTime } from "../lib/format";
+import { COLORS, POSTURE_LABEL, fmtGWh, fmtMW, fmtPct, fmtSigned, fmtTime, roundTicks } from "../lib/format";
 import { ChartTooltip } from "./ui/ChartTooltip";
+import { ErrorCalendar } from "./ErrorCalendar";
 
 const POSTURES: RiskPosture[] = ["raw", "bias", "p90", "p95"];
 
@@ -21,7 +22,7 @@ export function usePostureComparison(baseline: DashboardResponse | null) {
   return rows;
 }
 
-export function ClientBriefingTab({ baseline }: { baseline: DashboardResponse | null }) {
+export function ClientBriefingTab({ baseline, onInspect }: { baseline: DashboardResponse | null; onInspect: (startTime: string) => void }) {
   const postures = usePostureComparison(baseline);
 
   const gapData = useMemo(
@@ -38,6 +39,8 @@ export function ClientBriefingTab({ baseline }: { baseline: DashboardResponse | 
       }),
     [baseline],
   );
+
+  const gapTicks = roundTicks(gapData.flatMap((d) => [d.actual, d.forecast]));
 
   if (!baseline) return <p className="animate-pulse py-24 text-center text-sm text-ink-3">Preparing the January 2026 briefing…</p>;
   const { kpis, meta } = baseline;
@@ -68,8 +71,8 @@ export function ClientBriefingTab({ baseline }: { baseline: DashboardResponse | 
           <div className="draw-in h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <ComposedChart data={gapData} margin={{ top: 24, right: 16, left: 0, bottom: 0 }}>
-                <XAxis dataKey="startTime" tickFormatter={(v) => fmtTime(v).split(" ").slice(0, 2).join(" ")} minTickGap={64} tick={{ fontSize: 11 }} tickLine={false} axisLine={{ stroke: "#D5DEE8" }} />
-                <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)} GW`} width={52} tickLine={false} axisLine={false} />
+                <XAxis dataKey="startTime" tickFormatter={(v) => fmtTime(v).split(" ").slice(0, 2).join(" ")} minTickGap={64} tick={{ fontSize: 11 }} tickLine={false} axisLine={{ stroke: "var(--c-rule)" }} />
+                <YAxis tickFormatter={(v) => `${(v / 1000).toFixed(0)} GW`} width={52} tickLine={false} axisLine={false} ticks={gapTicks} domain={[0, gapTicks[gapTicks.length - 1]]} />
                 <Tooltip
                   content={
                     <ChartTooltip
@@ -97,7 +100,7 @@ export function ClientBriefingTab({ baseline }: { baseline: DashboardResponse | 
                     fill="#fff"
                     stroke={COLORS.shortfall}
                     strokeWidth={2.5}
-                    label={{ value: `${fmtMW(kpis.max_overforecast_mw)} MW short, ${fmtTime(kpis.max_overforecast_time)}`, position: "top", fill: COLORS.shortfall, fontSize: 12, fontWeight: 600 }}
+                    label={{ value: `${fmtMW(kpis.max_overforecast_mw)} MW short, ${fmtTime(kpis.max_overforecast_time)}`, position: "top", fill: COLORS.ink, fontSize: 12, fontWeight: 600 }}
                   />
                 )}
               </ComposedChart>
@@ -115,7 +118,7 @@ export function ClientBriefingTab({ baseline }: { baseline: DashboardResponse | 
           </figcaption>
         </figure>
 
-        <dl className="grid grid-cols-2 border-t border-rule bg-white/70 lg:grid-cols-4">
+        <dl className="grid grid-cols-2 border-t border-rule bg-panel/70 lg:grid-cols-4">
           <Fact value={`${fmtMW(kpis.mae_mw)} MW`} label="Typical miss per half-hour" />
           <Fact value={fmtPct(kpis.shortfall_period_pct, 0)} label="Half-hours where the forecast was too high" />
           <Fact value={`${fmtMW(kpis.p90_shortfall_buffer_mw)} MW`} label="Extra cover needed for 9 in 10 periods" />
@@ -139,9 +142,9 @@ export function ClientBriefingTab({ baseline }: { baseline: DashboardResponse | 
               return (
                 <div key={p}>
                   <div className="mb-1.5 flex items-baseline justify-between text-[14px]">
-                    <span className={`font-medium ${p === "bias" ? "text-fcst" : "text-ink"}`}>
+                    <span className="font-medium text-ink">
                       {POSTURE_LABEL[p]}
-                      {p === "bias" && <span className="ml-2 rounded-full bg-fcst/10 px-2 py-0.5 text-[12px]">Balanced</span>}
+                      {p === "bias" && <span className="ml-2 rounded-full px-2 py-0.5 text-[12px] text-ink-2 ring-1 ring-rule">Balanced</span>}
                     </span>
                     <span className="num text-[13px] text-ink-2">net {net == null ? "—" : `${net > 0 ? "+" : ""}${fmtGWh(net, 0)}`}</span>
                   </div>
@@ -150,13 +153,13 @@ export function ClientBriefingTab({ baseline }: { baseline: DashboardResponse | 
                       <div className="flex h-full items-center justify-end rounded-l-md bg-short/85 pr-2 transition-all duration-500" style={{ width: `${(100 * short) / maxSide}%` }}>
                         {short / maxSide > 0.28 && <span className="num text-[12px] font-medium text-white">{fmtGWh(short, 0)}</span>}
                       </div>
-                      {short / maxSide <= 0.28 && <span className="num order-first pr-2 text-[12px] text-short">{m ? fmtGWh(short, 0) : ""}</span>}
+                      {short / maxSide <= 0.28 && <span className="num order-first pr-2 text-[12px] text-ink-2">{m ? fmtGWh(short, 0) : ""}</span>}
                     </div>
                     <div className="flex h-7 items-center rounded-r-md bg-paper">
                       <div className="flex h-full items-center rounded-r-md bg-long/80 pl-2 transition-all duration-500" style={{ width: `${(100 * long) / maxSide}%` }}>
                         {long / maxSide > 0.28 && <span className="num text-[12px] font-medium text-white">{fmtGWh(long, 0)}</span>}
                       </div>
-                      {long / maxSide <= 0.28 && <span className="num pl-2 text-[12px] text-long">{m ? fmtGWh(long, 0) : ""}</span>}
+                      {long / maxSide <= 0.28 && <span className="num pl-2 text-[12px] text-ink-2">{m ? fmtGWh(long, 0) : ""}</span>}
                     </div>
                   </div>
                 </div>
@@ -186,6 +189,8 @@ export function ClientBriefingTab({ baseline }: { baseline: DashboardResponse | 
           </ul>
         </div>
       </section>
+
+      <ErrorCalendar data={baseline} onInspect={onInspect} />
 
       <section className="panel p-6 sm:p-8">
         <Step n={3} title="What we recommend" />
@@ -222,7 +227,7 @@ function Key({ color, line, children }: { color: string; line?: boolean; childre
 function Fact({ value, label }: { value: string; label: string }) {
   return (
     <div className="border-r border-rule px-6 py-5 last:border-r-0 sm:px-10 [&:nth-child(2)]:border-r-0 lg:[&:nth-child(2)]:border-r">
-      <dd className="num font-expanded text-[26px] font-bold text-ink">{value}</dd>
+      <dd className="figure font-expanded text-[26px] font-bold text-ink">{value}</dd>
       <dt className="mt-1 text-[13px] leading-snug text-ink-2">{label}</dt>
     </div>
   );
@@ -231,7 +236,7 @@ function Fact({ value, label }: { value: string; label: string }) {
 function Step({ n, title }: { n: number; title: string }) {
   return (
     <h3 className="flex items-center gap-3">
-      <span className="num grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink text-[14px] font-semibold text-white">{n}</span>
+      <span className="num grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink text-[14px] font-semibold text-panel">{n}</span>
       <span className="font-semi-expanded text-[20px] font-semibold text-ink">{title}</span>
     </h3>
   );

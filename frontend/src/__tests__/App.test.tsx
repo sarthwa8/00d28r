@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import App from "../App";
 import { toCsv } from "../components/ProcurementDeskTab";
 import { fmtSigned, fmtTime } from "../lib/format";
@@ -85,6 +85,7 @@ beforeEach(() => {
 });
 afterEach(() => {
   cleanup();
+  window.history.replaceState(null, "", "/");
   vi.unstubAllGlobals();
 });
 
@@ -133,6 +134,30 @@ describe("WindSight GB app", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Tech review" }));
     expect(await screen.findByText(/No look-ahead/)).toBeInTheDocument();
     expect(await screen.findByText(/2 \/ 2|1 \/ 2/)).toBeInTheDocument();
+  });
+});
+
+describe("shell", () => {
+  it("toggles the theme and jumps between workspaces with number keys", async () => {
+    render(<App />);
+    await screen.findByTestId("kpi-strip");
+    const before = document.documentElement.dataset.theme;
+    fireEvent.click(screen.getByRole("button", { name: /Switch to (dark|light) theme/ }));
+    expect(document.documentElement.dataset.theme).not.toBe(before);
+    fireEvent.keyDown(window, { key: "4" });
+    expect(screen.getByRole("tab", { name: "Tech review" })).toHaveAttribute("aria-selected", "true");
+    expect(window.location.hash).toBe("#tech");
+    fireEvent.keyDown(window, { key: "2" });
+    expect(await screen.findByLabelText("Forecast error by delivery day and settlement period")).toBeInTheDocument();
+  });
+
+  it("offers a table view for the lead-time chart", async () => {
+    render(<App />);
+    await screen.findByTestId("kpi-strip");
+    fireEvent.click(screen.getByRole("tab", { name: "Error lab" }));
+    const group = await screen.findByRole("group", { name: /The further ahead, the bigger the miss/ });
+    fireEvent.click(within(group).getByRole("button", { name: "Table" }));
+    expect(screen.getByLabelText("Error by lead time")).toHaveTextContent("36-48h");
   });
 });
 
