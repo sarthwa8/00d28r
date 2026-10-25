@@ -9,7 +9,7 @@ purchase decision made in **January 2026**:
 All numbers come from real **Elexon BMRS** data: `FUELHH` (actual generation, `fuelType = WIND`) and `WINDFOR` (wind forecasts with `publishTime`).
 No other data sources are used.
 
-**Deployed app:** _not yet deployed. See [DEPLOYMENT_AND_SUBMISSION.md](DEPLOYMENT_AND_SUBMISSION.md) (pending account authorisation)._
+**Live app (Vercel):** https://windsight-00d28r.vercel.app  ·  **API health:** https://windsight-00d28r.vercel.app/api/v1/health  ·  **Repo:** https://github.com/sarthwa8/00d28r
 
 > **AI tool disclosure:** this project was built with the help of AI tools, specifically **Claude Code (Anthropic Claude Opus)**,
 > working from a written build specification (`CLAUDE_BUILD_SPEC.md`). The AI generated most of the code, tests and documentation,

@@ -26,3 +26,5 @@ frontend/coverage/
 
 # Local tooling
 .claude/
+.vercel
+.env*

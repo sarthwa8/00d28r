@@ -5,8 +5,8 @@
 | Deliverable | Status |
 |---|---|
 | Application code, tests, Docker | ✅ Done and verified locally (pytest 38/38, Vitest 7/7, Vite build, `docker compose up` healthy) |
-| Public GitHub repo (anonymous name) | ⏳ Needs the owner's go-ahead. Creating a public repo is an outward-facing action |
-| Vercel deployment | ⏳ Config ready (`vercel.json`, `api/index.py`). Deploys from the GitHub repo once it exists |
+| Public GitHub repo (anonymous name) | ✅ https://github.com/sarthwa8/00d28r (public, opens without login) |
+| Vercel deployment | ✅ https://windsight-00d28r.vercel.app (production, deployed with the Vercel CLI; page and API verified without login) |
 | YouTube video (unlisted, ≤10 min) | ⏳ Must be recorded by a person. Script below |
 | Submission form | ⏳ Owner submits at https://forms.cloud.microsoft/r/Ljmf1aWESK |
 
@@ -32,7 +32,8 @@ npx vercel@latest login
 npx vercel@latest --prod
 ```
 
-How it runs on Vercel: `frontend/dist` is served from the CDN. `/api/*` is rewritten to the Python function
+`vercel.json` sets `"framework": null` on purpose. Otherwise Vercel auto-detects the FastAPI preset, which routes every path through the
+function and skips the static SPA build. How it runs on Vercel: `frontend/dist` is served from the CDN. `/api/*` is rewritten to the Python function
 `api/index.py`, which imports the FastAPI app and bundles `backend/**`, including the data snapshot.
 
 Verify the deployment in an incognito window:
